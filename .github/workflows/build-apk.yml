@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir -p android-project
           unzip -q "MediaHub_v0.3_GitHub_Build.zip" -d android-project
-          SETTINGS_FILE="$(find android-project -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)"
+          SETTINGS_FILE="$(find android-project -type f \\( -name settings.gradle -o -name settings.gradle.kts \\) -print -quit)"
           if [ -z "$SETTINGS_FILE" ]; then
             echo "::error::No Gradle settings file found in the ZIP archive."
             find android-project -maxdepth 5 -type f -print
@@ -43,7 +43,9 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
 
       - name: Install Android SDK packages
         run: |
