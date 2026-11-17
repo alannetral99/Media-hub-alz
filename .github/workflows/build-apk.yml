@@ -1,0 +1,70 @@
+name: Build MediaHub ALZ APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "MediaHub_v0.3_GitHub_Build.zip"
+      - ".github/workflows/build-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check project archive
+        run: |
+          test -f "MediaHub_v0.3_GitHub_Build.zip" || {
+            echo "::error::MediaHub_v0.3_GitHub_Build.zip was not found in the repository root."
+            exit 1
+          }
+
+      - name: Extract Android project
+        run: |
+          mkdir -p android-project
+          unzip -q "MediaHub_v0.3_GitHub_Build.zip" -d android-project
+          SETTINGS_FILE="$(find android-project -type f \\( -name settings.gradle -o -name settings.gradle.kts \\) -print -quit)"
+          if [ -z "$SETTINGS_FILE" ]; then
+            echo "::error::No settings.gradle or settings.gradle.kts found in the ZIP archive."
+            echo "Archive contents:"
+            find android-project -maxdepth 4 -type f -print
+            exit 1
+          fi
+          echo "PROJECT_DIR=$(dirname "$SETTINGS_FILE")" >> "$GITHUB_ENV"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build debug APK
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew --no-daemon assembleDebug
+          else
+            gradle --no-daemon assembleDebug
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediaHub-ALZ-debug-apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
