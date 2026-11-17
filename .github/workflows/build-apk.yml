@@ -74,3 +74,10 @@ jobs:
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Clean temporary extracted project
+        if: always()
+        run: |
+          rm -rf android-project
+          echo "Temporary extraction directory cleaned."
+          test -f "MediaHub_v0.3_GitHub_Build.zip" && echo "Original project ZIP preserved."
